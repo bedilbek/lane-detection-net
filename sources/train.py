@@ -1,10 +1,12 @@
 # set the matplotlib backend so figures can be saved in the background
-import locale
+import time
 
-from tensorflow.python.keras.optimizer_v2.adam import Adam
-
-from model import LaneControlNet
 import matplotlib
+from pydot import Dot
+from keras.optimizers import Adam
+from keras_to_weight import export_model
+from model import LaneControlNet
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 # import the necessary packages
@@ -21,8 +23,10 @@ ap.add_argument("-d", "--dataset", required=True,
                 help="path to input dataset (i.e., directory of images)")
 ap.add_argument("-m", "--model", required=True,
                 help="path to output model")
-ap.add_argument("-p", "--plot", type=str, default="output",
-                help="base filename for generated plots")
+ap.add_argument("-c", "--converted", required=True,
+                help="path to converted output weights model")
+ap.add_argument("-r", "--result", type=str, default="result",
+                help="base filename for generated plots and results")
 ap.add_argument("--debug", dest='debug', action='store_true',
                 help="Debug options")
 args = vars(ap.parse_args())
@@ -31,11 +35,10 @@ args = vars(ap.parse_args())
 # batch size, and image dimensions
 EPOCHS = 20
 INIT_LR = 1e-3
-BS = 16
+BS = 4
 IMAGE_DIMS = (256, 256, 1)
 
 print("[INFO] loading images...")
-
 
 dataset_file = open(args['dataset'], 'r')
 dataset = dataset_file.readlines()
@@ -111,11 +114,15 @@ print("[INFO] data matrix: {} images ({:.2f}MB)".format(
 
 # partition the data into training and testing splits using 80% of
 # the data for training and the remaining 20% for testing
-split = train_test_split(data, throttle_values, steering_left_values, steering_right_values, test_size=0.2, random_state=42)
-(train_x, test_x, train_throttle_y, test_throttle_y, train_steering_left_y, test_steering_left_y, train_steering_right_y, test_steering_right_y) = split
+split = train_test_split(data, throttle_values, steering_left_values, steering_right_values, test_size=0.2,
+                         random_state=42)
+(
+train_x, test_x, train_throttle_y, test_throttle_y, train_steering_left_y, test_steering_left_y, train_steering_right_y,
+test_steering_right_y) = split
 
 # initialize our FashionNet multi-output network
-model = LaneControlNet.build(256, 256, final_act='linear')
+# model = LaneControlNet.build((IMAGE_DIMS[0], IMAGE_DIMS[1]), final_act='linear')
+model = LaneControlNet.build_sequential((IMAGE_DIMS[0], IMAGE_DIMS[1]), final_act='sigmoid')
 
 # define two dictionaries: one that specifies the loss method for
 # each output of the network along with a second dictionary that
@@ -143,53 +150,73 @@ H = model.fit(train_x, train_y,
               batch_size=BS,
               verbose=1)
 
+# deleting dataset
+print("[INFO] deleting dataset...")
+del(dataset)
+del(train_x)
+del(train_y)
+del(train_throttle_y)
+del(train_steering_right_y)
+del(train_steering_left_y)
+del(test_x)
+del(test_y)
+del(test_throttle_y)
+del(test_steering_right_y)
+del(test_steering_left_y)
+
 # save the model to disk
 print("[INFO] serializing network...")
 model.save(args["model"])
 
+# converting the model to weights file and saving to disk
+print("[INFO] converting network...")
+export_model(model, args["converted"])
+
+# print("[INFO] visualizing model graph...")
+# from tensorflow.python.keras.utils import model_to_dot
+# pydot: Dot = model_to_dot(model, rankdir='LR', show_shapes=True)
+# pydot.write('{}_model_graph.png'.format(args['result']), format='png')
 
 # plot the total loss, throttle loss, steering_right loss and steering_left loss
-# lossNames = ['loss', 'throttle_output_loss', 'left_steering_output_loss', 'right_steering_output_loss']
+print("[INFO] visualizing losses and accuracies over epochs...")
 lossNames = ['loss']
 plt.style.use("ggplot")
-(fig, ax) = plt.subplots(1, 1, figsize=(13, 13))
+(fig, ax) = plt.subplots()
 
 # loop over the loss names
 for (i, l) in enumerate(lossNames):
     # plot the loss for both the training and validation data
     title = "Loss for {}".format(l) if l != "loss" else "Total loss"
-    ax[i].set_title(title)
-    ax[i].set_xlabel("Epoch #")
-    ax[i].set_ylabel("Loss")
-    ax[i].plot(np.arange(0, EPOCHS), H.history[l], label=l)
-    ax[i].plot(np.arange(0, EPOCHS), H.history["val_" + l],
+    ax.set_title(title)
+    ax.set_xlabel("Epoch #")
+    ax.set_ylabel("Loss")
+    ax.plot(np.arange(0, EPOCHS), H.history[l], label=l)
+    ax.plot(np.arange(0, EPOCHS), H.history["val_" + l],
                label="val_" + l)
-    ax[i].legend()
+    ax.legend()
 
 # save the losses figure and create a new figure for the accuracies
 plt.tight_layout()
-plt.savefig("{}_losses.png".format(args["plot"]))
+plt.savefig("{}_model_losses.png".format(args["result"]))
 plt.close()
 
-
 # create a new figure for the accuracies
-# accuracyNames = ['throttle_output_accuracy', 'left_steering_output_accuracy', 'right_steering_output_accuracy']
-accuracyNames = ['accuracy']
+accuracyNames = ['acc']
 plt.style.use("ggplot")
-(fig, ax) = plt.subplots(1, 1, figsize=(8, 8))
+(fig, ax) = plt.subplots()
 
 # loop over the accuracy names
 for (i, l) in enumerate(accuracyNames):
     # plot the loss for both the training and validation data
-    ax[i].set_title("Accuracy for {}".format(l))
-    ax[i].set_xlabel("Epoch #")
-    ax[i].set_ylabel("Accuracy")
-    ax[i].plot(np.arange(0, EPOCHS), H.history[l], label=l)
-    ax[i].plot(np.arange(0, EPOCHS), H.history["val_" + l],
+    ax.set_title("Accuracy for {}".format(l))
+    ax.set_xlabel("Epoch #")
+    ax.set_ylabel("Accuracy")
+    ax.plot(np.arange(0, EPOCHS), H.history[l], label=l)
+    ax.plot(np.arange(0, EPOCHS), H.history["val_" + l],
                label="val_" + l)
-    ax[i].legend()
+    ax.legend()
 
 # save the accuracies figure
 plt.tight_layout()
-plt.savefig("{}_accs.png".format(args["plot"]))
+plt.savefig("{}_model_accs.png".format(args["result"]))
 plt.close()

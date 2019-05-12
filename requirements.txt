@@ -28,6 +28,7 @@ Keras==2.2.4
 Keras-Applications==1.0.7
 Keras-Preprocessing==1.0.9
 kiwisolver==1.1.0
+llvmlite==0.26.0
 Markdown==3.1
 MarkupSafe==1.1.1
 matplotlib==3.0.3
@@ -36,9 +37,9 @@ mock==3.0.3
 nbconvert==5.5.0
 nbformat==4.4.0
 notebook==5.7.8
+numba==0.41.0
 numpy==1.16.3
-opencv-contrib-python==4.1.0.25
-opencv-python==4.1.0.25
+opencv-python==3.4.4.19
 pandocfilters==1.4.2
 parso==0.4.0
 pexpect==4.7.0

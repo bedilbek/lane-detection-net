@@ -2,10 +2,9 @@
 import socket
 
 from cv2.cv2 import cvtColor, COLOR_RGB2GRAY
-from numpy.core.multiarray import ndarray
 
-from sources.config import *
-from filter_frame import birdeye, thresh_frame_in_LAB
+from sources.regression.config import *
+from utils.filter_frame import birdeye
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 server_address = ('localhost', 8059)
@@ -16,14 +15,9 @@ USE_JIT = True
 NUMBER_OF_TRIALS = 30
 sum_of_trials = 0
 IMAGE_DIMENSIONS = (CONFIG['input_width'], CONFIG['input_height'])
-import sys
-from numba import jit
 import argparse
 
-import tensorflow as tf
-import matplotlib
 from tensorflow.python.keras.preprocessing.image import img_to_array
-from filter_frame import yellow_th_max, yellow_th_min
 import numpy as np
 import cv2 as cv
 import os

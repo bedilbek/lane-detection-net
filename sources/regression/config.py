@@ -2,7 +2,7 @@ NVIDIA_H, NVIDIA_W = 256, 256
 
 CONFIG = {
     'batchsize': 20,
-    'epochs': 50,
+    'epochs': 20,
     'input_width': NVIDIA_W,
     'input_height': NVIDIA_H,
     'input_channels': 1,

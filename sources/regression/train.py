@@ -1,16 +1,13 @@
 # set the matplotlib backend so figures can be saved in the background
 import csv
-import time
 
-import matplotlib
 from keras.callbacks import ModelCheckpoint, CSVLogger
-from pydot import Dot
 from keras.optimizers import Adam
 
-from filter_frame import birdeye
-from loader import generate_data_batch, split_train_val
-from model import LaneControlNet
-from sources.config import *
+from utils.filter_frame import birdeye
+from utils.loader import generate_data_batch, split_train_val
+from sources.regression.model import LaneControlNet
+from sources.regression.config import *
 import matplotlib.pyplot as plt
 # import the necessary packages
 from keras.preprocessing.image import img_to_array
@@ -51,10 +48,10 @@ if __name__ == '__main__':
     model.summary()
 
     # json dump of model architecture
-    with open('logs/{}.json'.format(args['model']), 'w') as f:
+    with open('logs/regression_{}.json'.format(args['model']), 'w') as f:
         f.write(model.to_json())
 
-    checkpoint_path = 'checkpoints/{}_weights'.format(args['model'])
+    checkpoint_path = 'checkpoints/regression_{}_weights'.format(args['model'])
 
     checkpointer = ModelCheckpoint(checkpoint_path + '.{epoch:02d}-{val_loss:.3f}.hdf5')
     logger = CSVLogger(filename='logs/{}_history.csv'.format(args['model']))
@@ -147,10 +144,10 @@ else:
     (
     train_x, test_x, train_throttle_y, test_throttle_y, train_steering_y, test_steering_y) = split
 
-    # train_y = np.array(list(zip(train_throttle_y, train_steering_y)))
-    # test_y = np.array(list(zip(train_throttle_y, test_steering_y)))
-    train_y = np.array(train_steering_y)
-    test_y = np.array(test_steering_y)
+    train_y = np.array(list(zip(train_throttle_y, train_steering_y)))
+    test_y = np.array(list(zip(train_throttle_y, test_steering_y)))
+    # train_y = np.array(train_throttle_y, train_steering_y)
+    # test_y = np.array(train_throttle_y, test_steering_y)
     print(train_y[:10])
     print(test_y[:10])
     # train the model
@@ -165,7 +162,7 @@ else:
 
     # save the model to disk
     print("[INFO] serializing network...")
-    model.save('models/{}.h5'.format(args["model"]))
+    model.save('models/regression_{}.h5'.format(args["model"]))
 
     # converting the model to weights file and saving to disk
     print("[INFO] converting network...")
@@ -196,7 +193,7 @@ else:
 
     # save the losses figure and create a new figure for the accuracies
     plt.tight_layout()
-    plt.savefig("results/{}_model_losses.png".format(args["result"]))
+    plt.savefig("results/regression_{}_model_losses.png".format(args["result"]))
     plt.close()
 
     # create a new figure for the accuracies
@@ -217,5 +214,5 @@ else:
 
     # save the accuracies figure
     plt.tight_layout()
-    plt.savefig("results/{}_model_accs.png".format(args["result"]))
+    plt.savefig("results/regression_{}_model_accs.png".format(args["result"]))
     plt.close()

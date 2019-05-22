@@ -1,4 +1,3 @@
-from os.path import join
 import cv2
 import numpy as np
 import csv
@@ -8,7 +7,7 @@ import matplotlib.pyplot as plt
 import random
 import keras.backend as K
 from config import *
-from filter_frame import birdeye
+from utils.filter_frame import birdeye
 
 
 def split_train_val(csv_driving_data, test_size=0.2):

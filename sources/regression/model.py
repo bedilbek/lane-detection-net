@@ -42,27 +42,23 @@ class LaneControlNet:
 
         # CONV => RELU => BN => POOL
         model = Sequential()
-        model.add(Conv2D(24, kernel_size=(5, 5), activation='elu', strides=2, padding='valid', input_shape=inputs))
-        model.add(Dropout(0.2))
-        model.add(Conv2D(36, kernel_size=(5, 5), activation='elu', strides=2, padding='valid'))
-        model.add(Dropout(0.2))
-        model.add(Conv2D(48, kernel_size=(5, 5), activation='elu', strides=2, padding='valid'))
-        model.add(Dropout(0.2))
-        model.add(Conv2D(64, kernel_size=(3, 3), activation='elu', padding='valid'))
-        model.add(Dropout(0.2))
-        model.add(Conv2D(64, kernel_size=(3, 3), activation='elu', padding='valid'))
-        model.add(Dropout(0.2))
+        model.add(Conv2D(16, kernel_size=(3, 3), activation='relu', strides=2, padding='valid', input_shape=inputs))
+        model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', strides=2, padding='valid'))
+        model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', strides=2, padding='valid'))
+        model.add(Conv2D(64, kernel_size=(3, 3), activation='relu', padding='valid'))
+        model.add(Conv2D(64, kernel_size=(3, 3), activation='relu', padding='valid'))
+        model.add(Dropout(0.5))
 
         # Flatten the volume, FC => DENSE
         # define branch of output layers for the regression of steering
         model.add(Flatten())
 
-        model.add(Dense(100, activation='elu'))
+        model.add(Dense(100, activation='relu'))
         model.add(Dropout(0.5))
-        model.add(Dense(50, activation='elu'))
+        model.add(Dense(50, activation='relu'))
         model.add(Dropout(0.5))
-        model.add(Dense(10, activation='elu'))
-        model.add(Dense(1, activation=final_act))
+        model.add(Dense(10, activation='relu'))
+        model.add(Dense(2, activation=final_act))
 
         return model
 
